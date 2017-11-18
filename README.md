@@ -1,2 +1,7 @@
-# field-level-encryption-sample
+## Field Level Encryption Sample
+
 Add Description
+
+## License
+
+This library is licensed under the Apache 2.0 License. 

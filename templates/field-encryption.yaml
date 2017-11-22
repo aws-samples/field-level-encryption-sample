@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  Sample architecture using Secure Ingress feature of Amazon CludFront
+  Sample architecture using Field-Level Encryption feature of Amazon CludFront
   You will be billed for the AWS resources used if you create a stack from this template.
   **NOTICE** Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
   Licensed under the Apache License, Version 2.0 (the "License").
@@ -47,7 +47,7 @@ Parameters:
   TemplatesPrefix:
     Description: Path in the S3 bucket containing CloudFormation templates
     Type: String
-    Default: secure-ingress/
+    Default: field-encryption/
     AllowedPattern: ^[0-9a-zA-Z-/]*$
     ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).
   ArtifactsBucket:
@@ -59,7 +59,7 @@ Parameters:
   ArtifactsPrefix:
     Description: Path in the S3 bucket containing artifact files
     Type: String
-    Default: secure-ingress/
+    Default: field-encryption/
     AllowedPattern: ^[0-9a-zA-Z-/]*$
     ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).    
 
@@ -133,6 +133,9 @@ Outputs:
   ApplicationURL:
     Value: !Sub https://${CloudFrontDistribution.DomainName}
     Description: URL for the application
+  BastionHostIP:
+    Value: !GetAtt BastionHost.Outputs.EIP1
+    Description: Public IP for Bastion Host
 
 
 

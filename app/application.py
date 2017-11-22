@@ -59,6 +59,54 @@ welcome = """
     -webkit-transition-duration: 4s;
     text-shadow: #fff 0px 0px 25px;
   }
+  table.blueTable {
+    color: #000000;
+    border: 1px solid #1C6EA4;
+    background-color: #EEEEEE;
+    width: 50%;
+    text-align: left;
+    border-collapse: collapse;
+  }
+  table.blueTable td, table.blueTable th {
+    border: 1px solid #AAAAAA;
+    padding: 3px 2px;
+  }
+  table.blueTable tbody td {
+    font-size: 13px;
+  }
+  table.blueTable tr:nth-child(even) {
+    background: #D0E4F5;
+  }
+  table.blueTable thead {
+    background: #1C6EA4;
+    background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+    background: -webkit-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+    background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+    border-bottom: 2px solid #444444;
+  }
+  table.blueTable thead th {
+    font-size: 15px;
+    font-weight: bold;
+    color: #FFFFFF;
+    border-left: 2px solid #D0E4F5;
+  }
+  table.blueTable thead th:first-child {
+    border-left: none;
+  }
+  table.blueTable tfoot td {
+    font-size: 14px;
+  }
+  table.blueTable tfoot .links {
+    text-align: right;
+  }
+  table.blueTable tfoot .links a{
+    display: inline-block;
+    background: #1C6EA4;
+    color: #FFFFFF;
+    padding: 2px 8px;
+    border-radius: 5px;
+  }
+  }
   a {
     color: #0188cc;
   }
@@ -111,20 +159,48 @@ welcome = """
 </head>
 <body id="sample">
   <div class="textColumn">
-    <h1>Secure Ingress Demo</h1>
+    <h1>Field-Level Encryption Demo</h1>
     <p>This application demonstrates Amazon CloudFront Field-Level Encryption feature</p>
   </div>
   <div class="linksColumn"> 
-    <h2>Fill out the form below:</h2>
+    <p></p>
     <form action="/submission" method="post">
-      Full Name:<br>
-      <input type="text" name="name" value="e.g. Jenny Smith"><br>
-      Email Address:<br>
-      <input type="text" name="email" value="e.g. jenny@domain.com"><br><br>
-      Phone Number:<br>
-      <input type="text" name="phone" value="e.g. 404-867-5309"><br><br>
-      <input type="submit" value="Submit">
+      <table class="blueTable">
+        <tbody>
+          <thead>
+          <tr><th colspan="2">Fill out the form below</th></tr>
+          <tr><td>Full Name:</td><td><input type="text" name="name" value="Jenny Smith"></td></tr>
+          <tr><td>Email Address:</td><td><input type="text" name="email" value="jenny@domain.com"></td></tr>
+          <tr><td>Phone Number:</td><td><input type="text" name="phone" value="404-867-5309"></td></tr>
+          <tr><td>&nbsp;</td><td><input type="submit" value="Submit"></td></tr>
+        </tbody>
+      </table> 
     </form>
+    <p>&nbsp;</p><p>&nbsp;</p>
+    <table class="blueTable">
+      <thead>
+        <tr>
+          <th>Configuration</th>
+          <th>Values</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Profile ID</td><td>P3K946BBGPE0BD</td></tr>
+        <tr><td>Public key alias</td><td>FLEdemo</td></tr>
+        <tr><td>Provider name</td><td>AWS</td></tr>
+        <tr><td>Pattern to match</td><td>phone</td></tr>
+        <tr><td>Content Type</td><td>application/x-www-form-urlencoded</td></tr>
+        <tr><td>Public key encoded</td><td>-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwGRBGuhacmw+C73kM6Zb
+u1HRLoa9stjkbBPlbpp4HFRnNk+cFantfn2FoeRCh3IF0WMeJm6H7JVcp87IMUiz
+q7eoFN5ToE4rXt7G/OQOdcaP4aepieMVXLsWNgjQXk6xTPovDhia78O6UaNs6hHf
+G1PAaRc+ae6Y2yecgGfrwZ4yNIr9YEsW9CrftAWo4Mkz0UniDDWcRy8blfyijmZg
+on6/avRst+BgKPNxMDxXHFOto2Mqm5Y0TpMgzqpIU0M9sAlvG/WMZfPwgE0D0h1t
+7/T4gtUxLCnv28gPU03Xr/eyRfjWWNZ/cbXgIE1JpxOYXPDJXZKRdD/Z8OcrcO0U
+1QIDAQAB
+-----END PUBLIC KEY-----</td></tr>    
+      </tbody>
+    </table>      
   </div>
 </body>
 </html>
@@ -133,6 +209,95 @@ welcome = """
 def application(environ, start_response):
     path    = environ['PATH_INFO']
     method  = environ['REQUEST_METHOD']
+    response = """
+      <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+      <html>
+      <head>
+        <!--
+          Copyright 2012 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+          Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
+
+              http://aws.Amazon/apache2.0/
+
+          or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+        -->
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Amazon CloudFront Field-Level Encryption - Demo</title>
+        <style>
+        body {
+          color: #000000;
+          background-color: #E0E0E0;
+          font-family: Arial, sans-serif;
+          font-size:14px;
+          -moz-transition-property: text-shadow;
+          -moz-transition-duration: 4s;
+          -webkit-transition-property: text-shadow;
+          -webkit-transition-duration: 4s;
+          text-shadow: none;
+        }
+        table.blueTable {
+          border: 1px solid #1C6EA4;
+          background-color: #EEEEEE;
+          width: 50%;
+          max-width: 50%;
+          overflow: scroll;
+          text-align: left;
+          border-collapse: collapse;
+        }
+        table.blueTable td, table.blueTable th {
+          border: 1px solid #AAAAAA;
+          padding: 3px 2px;
+        }
+        table.blueTable tbody td {
+          font-size: 13px;
+        }
+        table.blueTable tr:nth-child(even) {
+          background: #D0E4F5;
+        }
+        table.blueTable thead {
+          background: #1C6EA4;
+          background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+          background: -webkit-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+          background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+          border-bottom: 2px solid #444444;
+        }
+        table.blueTable thead th {
+          font-size: 15px;
+          font-weight: bold;
+          color: #FFFFFF;
+          border-left: 2px solid #D0E4F5;
+        }
+        table.blueTable thead th:first-child {
+          border-left: none;
+        }
+        table.blueTable tfoot td {
+          font-size: 14px;
+        }
+        table.blueTable tfoot .links {
+          text-align: right;
+        }
+        table.blueTable tfoot .links a{
+          display: inline-block;
+          background: #1C6EA4;
+          color: #FFFFFF;
+          padding: 2px 8px;
+          border-radius: 5px;
+        }
+        </style>
+      </head>
+      <body id="sample">
+        <h1>Contact Info</h1>
+        <table class="blueTable">
+          <thead>
+            <tr>
+              <th>Input</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+    """
+
     if method == 'POST':
         try:
             if path == '/':
@@ -158,12 +323,12 @@ def application(environ, start_response):
                 logger.info('name=' + Name)
                 logger.info('email=' + Email)    
                 logger.info('phone=' + Phone)
-                response = "Received message: %s" % request_body
-                response = response + "<br>name: " + Name
-                response = response + "<br>email: " + Email
-                response = response + "<br>phone: " + Phone
+                #response = "Received message: %s" % request_body
+                response = response + "<tr><td>name:</td><td>" + Name + "</td></tr>"
+                response = response + "<tr><td>email:</td><td>" + Email + "</td></tr>"
+                response = response + "<tr><td>phone (encrypted):</td><td>" + Phone + "</td></tr>"
                 DBTableName = os.environ['TABLENAME']
-                response = response + "<br>dynamodb: " + DBTableName
+                #response = response + "<br>dynamodb: " + DBTableName
                 logger.info("about to connect to dynamodb")
                 ddbclient = boto3.client('dynamodb', region_name='us-east-1')
                 logger.info("about to put_item")
@@ -176,7 +341,8 @@ def application(environ, start_response):
                   }
                 )
                 logger.info("<br>DynamoDB response: " + str(DBResponse))
-                response = response + "<br>DynamoDB response: " + str(DBResponse)
+                #response = response + "<br>DynamoDB response: " + str(DBResponse)
+
 
 
         except (TypeError, ValueError):
@@ -184,6 +350,13 @@ def application(environ, start_response):
             logger.warning("ValueError:" + str(ValueError))        
     else:
         response = welcome
+    
+    response = response + """
+          </tbody>
+        </table>
+      </body>
+    </html>
+    """
     status = '200 OK'
     headers = [('Content-type', 'text/html')]
 

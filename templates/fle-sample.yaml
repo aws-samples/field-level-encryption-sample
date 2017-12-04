@@ -361,6 +361,6 @@ Resources:
           CloudFrontDefaultCertificate: 'true'
 
 Outputs:
-  FLEApiInvokeUrl:
-    Description: URL for the deployed API
-    Value: !Sub https://${FLEApi}.execute-api.${AWS::Region}.amazonaws.com/prod
+  ApplicationURL:
+    Value: !Sub https://${CloudFrontDistribution.DomainName}/prod/
+    Description: URL for the application

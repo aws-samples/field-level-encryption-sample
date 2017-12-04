@@ -1,0 +1,366 @@
+Resources:
+  FLEApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: FLEApi
+      Body:
+        swagger: 2.0
+        info:
+          version: "2017-11-23T15:06:37Z"
+          title: "forms"
+        paths:
+          /:
+            get:
+              produces:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GETFunction.Arn}/invocations"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            post:
+              produces:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${POSTFunction.Arn}/invocations"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+        definitions:
+          Empty:
+            type: "object"
+            title: "Empty Schema"
+
+  FLEApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      Description: Prod deployment for FLE API
+      RestApiId: !Ref FLEApi
+      StageName: prod
+
+  FLEApiPOSTFunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref POSTFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${FLEApi}/*/POST/'
+
+  FLEApiGETFunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GETFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${FLEApi}/*/GET/'
+
+  ContactsDynamoDBTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: "Email"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "Email"
+          KeyType: "HASH"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+
+  GETFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: Allow-Logging-Into-CWL
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+
+  GETFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      Handler: index.lambda_handler
+      Role: !GetAtt GETFunctionExecutionRole.Arn
+      Runtime: python3.6
+      Timeout: 10
+      MemorySize: 128
+      Code: 
+        ZipFile: |
+          import json
+          def html_template():
+              template="""
+              <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+              <html><head>  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+              <title>Amazon CloudFront Field-Level Encryption - Demo</title><style>
+                body { color: #ffffff; background-color: #E0E0E0; font-family: Arial, sans-serif; font-size:14px; }
+                table.bT { color: #000000; border: 1px solid #1C6EA4; background-color: #EEEEEE; width: 50%; text-align: left; border-collapse: collapse; }
+                table.bT td, table.bT th { border: 1px solid #AAAAAA; padding: 3px 2px; }
+                table.bT tbody td { font-size: 13px; }
+                table.bT tr:nth-child(even) { background: #D0E4F5; }
+                table.bT thead { background: #1C6EA4; border-bottom: 2px solid #444444; }
+                table.bT thead th { font-size: 15px; font-weight: bold; color: #FFFFFF; border-left: 2px solid #D0E4F5; }
+                table.bT thead th:first-child { border-left: none; }
+                .textColumn, .linksColumn { padding: 2em; }
+                .textColumn { position: absolute; top: 0px; right: 50%; bottom: 0px; left: 0px; text-align: right; padding-top: 11em; background-color: #1BA86D; background-image: -moz-radial-gradient(left top, circle, #6AF9BD 0%, #00B386 60%); background-image: -webkit-gradient(radial, 0 0, 1, 0 0, 500, from(#6AF9BD), to(#00B386)); }
+                .linksColumn { position: absolute; top:0px; right: 0px; bottom: 0px; left: 50%; background-color: #E0E0E0; }
+                h1 { font-size: 500%; font-weight: normal; margin-bottom: 0em; }
+                </style></head><body id="sample">
+                <div class="textColumn">
+                  <h1>Field-Level Encryption Demo</h1>
+                  <p>This application demonstrates Amazon CloudFront Field-Level Encryption feature</p>
+                </div>
+                <div class="linksColumn"> 
+                  <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
+                  <form action="" method="post">
+                    <table class="bT">
+                      <tbody>
+                        <thead>
+                        <tr><th colspan="2">Fill out the form below</th></tr>
+                        <tr><td>Full Name:</td><td><input type="text" name="name" value="Jenny Smith"></td></tr>
+                        <tr><td>Email Address:</td><td><input type="text" name="email" value="jenny@domain.com"></td></tr>
+                        <tr><td>Phone Number:</td><td><input type="text" name="phone" value="404-867-5309"></td></tr>
+                        <tr><td>&nbsp;</td><td><input type="submit" value="Submit"></td></tr>
+                      </tbody>
+                    </table> 
+                  </form>     
+                </div>
+              </body>
+              </html>
+              """
+              return template
+          def respond(err, res=None):
+              return {
+                  'statusCode': '400' if err else '200',
+                  'body': err.message if err else res,
+                  'headers': {
+                      'Content-Type': 'text/html',
+                      'Cache-Control': 'max-age=15, public'
+                  },
+              }
+          def lambda_handler(event, context):
+              print("Received event: " + json.dumps(event, indent=2))
+              RESPONSE = html_template()
+              return respond(None, RESPONSE)
+
+  POSTFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: Allow-Logging-Into-CWL
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+      - PolicyName: Allow-Put-Into-DynamoDB
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:PutItem
+            Resource: !Sub '${ContactsDynamoDBTable.Arn}'
+
+  POSTFunction: 
+    Type: AWS::Lambda::Function
+    Properties: 
+      Handler: index.lambda_handler
+      Role: !GetAtt POSTFunctionExecutionRole.Arn
+      Runtime: python3.6
+      Environment:
+        Variables:
+          TABLENAME: !Ref ContactsDynamoDBTable
+      Timeout: 10
+      MemorySize: 128
+      Code: 
+        ZipFile: |
+          import json
+          import urllib
+          import boto3
+          import os
+          def html_template():
+              template="""
+                    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head>
+                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+                    <title>Amazon CloudFront Field-Level Encryption - Demo</title><style>
+                    body { color: #000000; background-color: #E0E0E0; font-family: Arial, sans-serif; font-size:14px; }
+                    table.bT {  border: 1px solid #1C6EA4; background-color: #EEEEEE; width: 50%; max-width: 50%; overflow: scroll; text-align: left; border-collapse: collapse; }
+                    table.bT td, table.bT th { border: 1px solid #AAAAAA; padding: 3px 2px; }
+                    table.bT tbody td { font-family: "Courier New", Courier, monospace; font-size: 13px; }
+                    table.bT tr:nth-child(even) {background: #D0E4F5;}
+                    table.bT thead {background: #1C6EA4; border-bottom: 2px solid #444444; }
+                    table.bT thead th { font-size: 15px; font-weight: bold; color: #FFFFFF; border-left: 2px solid #D0E4F5; }
+                    table.bT thead th:first-child { border-left: none; }
+                    table.bT tfoot td { font-size: 14px;}
+                    table.bT tfoot .links { text-align: right; }
+                    table.bT tfoot .links a{ display: inline-block; background: #1C6EA4; color: #FFFFFF; padding: 2px 8px; border-radius: 5px;}
+                    </style></head><body id="sample"><h1>Contact Info</h1><table class="bT">
+                      <thead><tr><th>Input</th><th>Value</th></tr></thead>
+                      <tbody><tr><td>name:</td><td>##NAME##</td></tr>
+                      <tr><td>email:</td><td>##EMAIL##</td></tr>
+                      <tr><td>phone (encrypted):</td><td>##PHONE##</td></tr></tbody>
+                    </table></body></html>
+              """
+              return template
+          def split2len(s, n):
+              def _f(s, n):
+                  while s:
+                      yield s[:n]
+                      s = s[n:]
+              return list(_f(s, n))
+          def mergewithbreaks(s,n):
+              slist = split2len(s,n)
+              output = ""
+              for line in slist:
+                  output = output + line + "<br>"
+              return output
+          def respond(err, res=None):
+              return {
+                  'statusCode': '400' if err else '200',
+                  'body': err.message if err else res,
+                  'headers': {
+                      'Content-Type': 'text/html',
+                  },
+              }
+          def lambda_handler(event, context):
+              print("Received event: " + json.dumps(event, indent=2))
+              body = urllib.parse.unquote(event['body'])
+              body = body.replace('+',' ')
+              RowList = body.split('&')
+              for Row in RowList:
+                  NameValuePair = Row.split('=')
+                  FieldName = NameValuePair[0]
+                  FieldValue = NameValuePair[1]
+                  if   FieldName == 'name':
+                      Name = FieldValue
+                  elif FieldName == 'email':
+                      Email = FieldValue
+                  elif FieldName == 'phone':
+                      Phone = FieldValue                        
+              DBTableName = os.environ['TABLENAME']
+              ddbclient = boto3.client('dynamodb')
+              DBResponse = ddbclient.put_item(
+                TableName = DBTableName,
+                Item = {
+                  'Email': {'S': Email},
+                  'Phone': {'S': Phone},
+                  'Name':  {'S': Name }
+                }
+              )
+              RESPONSE = html_template()
+              RESPONSE = RESPONSE.replace('##NAME##', Name)
+              RESPONSE = RESPONSE.replace('##EMAIL##', Email)
+              RESPONSE = RESPONSE.replace('##PHONE##', mergewithbreaks(Phone,60))
+              return respond(None, RESPONSE)
+
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Origins:
+        - DomainName: !Sub ${FLEApi}.execute-api.${AWS::Region}.amazonaws.com
+          Id: CFCustomOrigin
+          CustomOriginConfig:
+            HTTPSPort: '443'
+            OriginProtocolPolicy: https-only
+        Enabled: 'true'
+        DefaultCacheBehavior:
+          TargetOriginId: CFCustomOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: none
+        PriceClass: PriceClass_200
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: 'true'
+
+Outputs:
+  FLEApiInvokeUrl:
+    Description: URL for the deployed API
+    Value: !Sub https://${FLEApi}.execute-api.${AWS::Region}.amazonaws.com/prod

@@ -206,6 +206,20 @@ on6/avRst+BgKPNxMDxXHFOto2Mqm5Y0TpMgzqpIU0M9sAlvG/WMZfPwgE0D0h1t
 </html>
 """
 
+def split2len(s, n):
+    def _f(s, n):
+        while s:
+            yield s[:n]
+            s = s[n:]
+    return list(_f(s, n))
+
+def mergewithbreaks(s,n):
+    slist = split2len(s,n)
+    output = ""
+    for line in slist:
+        output = output + line + "<br>"
+    return output
+
 def application(environ, start_response):
     path    = environ['PATH_INFO']
     method  = environ['REQUEST_METHOD']
@@ -250,6 +264,7 @@ def application(environ, start_response):
           padding: 3px 2px;
         }
         table.blueTable tbody td {
+          font-family: "Courier New", Courier, monospace;
           font-size: 13px;
         }
         table.blueTable tr:nth-child(even) {
@@ -326,7 +341,7 @@ def application(environ, start_response):
                 #response = "Received message: %s" % request_body
                 response = response + "<tr><td>name:</td><td>" + Name + "</td></tr>"
                 response = response + "<tr><td>email:</td><td>" + Email + "</td></tr>"
-                response = response + "<tr><td>phone (encrypted):</td><td>" + Phone + "</td></tr>"
+                response = response + "<tr><td>phone (encrypted):</td><td>" + mergewithbreaks(Phone,60) + "</td></tr>"
                 DBTableName = os.environ['TABLENAME']
                 #response = response + "<br>dynamodb: " + DBTableName
                 logger.info("about to connect to dynamodb")

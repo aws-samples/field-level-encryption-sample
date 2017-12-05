@@ -106,18 +106,18 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${FLEApi}/*/GET/'
 
-  ContactsDynamoDBTable: 
+  ContactsDynamoDBTable:
     Type: AWS::DynamoDB::Table
-    Properties: 
-      AttributeDefinitions: 
-        - 
+    Properties:
+      AttributeDefinitions:
+        -
           AttributeName: "Email"
           AttributeType: "S"
-      KeySchema: 
-        - 
+      KeySchema:
+        -
           AttributeName: "Email"
           KeyType: "HASH"
-      ProvisionedThroughput: 
+      ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
 
@@ -146,15 +146,15 @@ Resources:
             - logs:PutLogEvents
             Resource: arn:aws:logs:*:*:*
 
-  GETFunction: 
+  GETFunction:
     Type: AWS::Lambda::Function
-    Properties: 
+    Properties:
       Handler: index.lambda_handler
       Role: !GetAtt GETFunctionExecutionRole.Arn
       Runtime: python3.6
       Timeout: 10
       MemorySize: 128
-      Code: 
+      Code:
         ZipFile: |
           import json
           def html_template():
@@ -179,7 +179,7 @@ Resources:
                   <h1>Field-Level Encryption Demo</h1>
                   <p>This application demonstrates Amazon CloudFront Field-Level Encryption feature</p>
                 </div>
-                <div class="linksColumn"> 
+                <div class="linksColumn">
                   <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
                   <form action="" method="post">
                     <table class="bT">
@@ -191,8 +191,8 @@ Resources:
                         <tr><td>Phone Number:</td><td><input type="text" name="phone" value="404-867-5309"></td></tr>
                         <tr><td>&nbsp;</td><td><input type="submit" value="Submit"></td></tr>
                       </tbody>
-                    </table> 
-                  </form>     
+                    </table>
+                  </form>
                 </div>
               </body>
               </html>
@@ -245,9 +245,9 @@ Resources:
             - dynamodb:PutItem
             Resource: !Sub '${ContactsDynamoDBTable.Arn}'
 
-  POSTFunction: 
+  POSTFunction:
     Type: AWS::Lambda::Function
-    Properties: 
+    Properties:
       Handler: index.lambda_handler
       Role: !GetAtt POSTFunctionExecutionRole.Arn
       Runtime: python3.6
@@ -256,7 +256,7 @@ Resources:
           TABLENAME: !Ref ContactsDynamoDBTable
       Timeout: 10
       MemorySize: 128
-      Code: 
+      Code:
         ZipFile: |
           import json
           import urllib
@@ -309,7 +309,6 @@ Resources:
           def lambda_handler(event, context):
               print("Received event: " + json.dumps(event, indent=2))
               body = urllib.parse.unquote(event['body'])
-              body = body.replace('+',' ')
               RowList = body.split('&')
               for Row in RowList:
                   NameValuePair = Row.split('=')
@@ -320,7 +319,7 @@ Resources:
                   elif FieldName == 'email':
                       Email = FieldValue
                   elif FieldName == 'phone':
-                      Phone = FieldValue                        
+                      Phone = FieldValue
               DBTableName = os.environ['TABLENAME']
               ddbclient = boto3.client('dynamodb')
               DBResponse = ddbclient.put_item(
@@ -337,10 +336,53 @@ Resources:
               RESPONSE = RESPONSE.replace('##PHONE##', mergewithbreaks(Phone,60))
               return respond(None, RESPONSE)
 
+  DecryptFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: Allow-Logging-Into-CWL
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+      - PolicyName: Allow-Get-ParamStore
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ssm:GetParameters
+            - ssm:DescribeParameters
+            Resource: arn:aws:ssm:*:*:*
+      - PolicyName: Allow-Get-DynamoDB
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:GetItem
+            Resource: !Sub '${ContactsDynamoDBTable.Arn}'
+
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'
     Properties:
       DistributionConfig:
+        Comment: Field-Level Encryption Sample
         Origins:
         - DomainName: !Sub ${FLEApi}.execute-api.${AWS::Region}.amazonaws.com
           Id: CFCustomOrigin

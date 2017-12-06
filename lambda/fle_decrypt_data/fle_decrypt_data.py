@@ -89,7 +89,8 @@ def decrypt_data(event, context):
     print table
 
 def main():
-	decrypt_data ("test", "test")
+	fle_decrypt_data ("test", "test")
 
 if __name__ == "__main__":
   main()
+

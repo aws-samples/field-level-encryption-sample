@@ -28,68 +28,61 @@ PrivateKeyPath = '/cloudfront/field-encryption/private-key'
 DBTableName = os.environ['TABLENAME']
 provider_id = 'FLEDemo'
 
-def decrypt_data(event, context):
-    class SIFPrivateMasterKeyProvider(RawMasterKeyProvider):
-        provider_id = provider_id
+class SIFPrivateMasterKeyProvider(RawMasterKeyProvider):
+    provider_id = provider_id
 
-        def __new__(cls, *args, **kwargs):
-            obj = super(SIFPrivateMasterKeyProvider, cls).__new__(cls)
-            return obj
+    def __new__(cls, *args, **kwargs):
+        obj = super(SIFPrivateMasterKeyProvider, cls).__new__(cls)
+        return obj
 
-        def __init__(self, private_key_id, private_key_text):
-            RawMasterKeyProvider.__init__(self)
+    def __init__(self, private_key_id, private_key_text):
+        RawMasterKeyProvider.__init__(self)
 
-            private_key = RSA.importKey(private_key_text)
-            self._key = private_key.exportKey()
+        private_key = RSA.importKey(private_key_text)
+        self._key = private_key.exportKey()
 
-            RawMasterKeyProvider.add_master_key(self, private_key_id)
+        RawMasterKeyProvider.add_master_key(self, private_key_id)
 
-        def _get_raw_key(self, key_id):
-            return WrappingKey(
-                wrapping_algorithm=WrappingAlgorithm.RSA_OAEP_SHA256_MGF1,
-                wrapping_key=self._key,
-                wrapping_key_type=EncryptionKeyType.PRIVATE
-            )
-
-    def DecryptField(private_key, field_data):
-        # add padding if needed base64 decoding
-        field_data = field_data + '=' * (-len(field_data) % 4)
-        # base64-decode to get binary ciphertext
-        ciphertext = base64.b64decode(field_data)
-        # decrypt ciphertext into plaintext
-        plaintext, header = aws_encryption_sdk.decrypt(
-            source=ciphertext,
-            key_provider=sif_private_master_key_provider
+    def _get_raw_key(self, key_id):
+        return WrappingKey(
+            wrapping_algorithm=WrappingAlgorithm.RSA_OAEP_SHA256_MGF1,
+            wrapping_key=self._key,
+            wrapping_key_type=EncryptionKeyType.PRIVATE
         )
-        return plaintext
 
-    # retrieve private key from Parameter Store into local memory
-    ssmclient = boto3.client('ssm')
-    ssmresponse = ssmclient.get_parameter(
-        Name=PrivateKeyPath,
-        WithDecryption=True
+def DecryptField(private_key, field_data):
+    # add padding if needed base64 decoding
+    field_data = field_data + '=' * (-len(field_data) % 4)
+    # base64-decode to get binary ciphertext
+    ciphertext = base64.b64decode(field_data)
+    # decrypt ciphertext into plaintext
+    plaintext, header = aws_encryption_sdk.decrypt(
+        source=ciphertext,
+        key_provider=sif_private_master_key_provider
     )
-    private_key_text = ssmresponse['Parameter']['Value']
-    sif_private_master_key_provider = SIFPrivateMasterKeyProvider("DemoPublicKey", private_key_text)
+    return plaintext
 
-    # connect to DynamoDB table
-    ddbclient = boto3.client('dynamodb')
-    DBResponse = ddbclient.scan(TableName = DBTableName)
+# retrieve private key from Parameter Store into local memory
+ssmclient = boto3.client('ssm')
+ssmresponse = ssmclient.get_parameter(
+    Name=PrivateKeyPath,
+    WithDecryption=True
+)
+private_key_text = ssmresponse['Parameter']['Value']
+sif_private_master_key_provider = SIFPrivateMasterKeyProvider("DemoPublicKey", private_key_text)
 
-    table = PrettyTable(['Name', 'Email', 'Phone'])
-    for i in DBResponse['Items']:
-        # Phone fields are encrypted, each field will require decryption
-        PhoneDecrypted = DecryptField( private_key_text, i['Phone']['S'] )
-        # less sensitive data fields are not encrypted, no special handling needed
-        table.add_row( [i['Name']['S'], i['Email']['S'], PhoneDecrypted] )
+# connect to DynamoDB table
+ddbclient = boto3.client('dynamodb')
+DBResponse = ddbclient.scan(TableName = DBTableName)
 
-    # remove private key from local memory
-    private_key_text = None
+table = PrettyTable(['Name', 'Email', 'Phone'])
+for i in DBResponse['Items']:
+    # Phone fields are encrypted, each field will require decryption
+    PhoneDecrypted = DecryptField( private_key_text, i['Phone']['S'] )
+    # less sensitive data fields are not encrypted, no special handling needed
+    table.add_row( [i['Name']['S'], i['Email']['S'], PhoneDecrypted] )
 
-    print table
+# remove private key from local memory
+private_key_text = None
 
-def main():
-	decrypt_data ("test", "test")
-
-if __name__ == "__main__":
-  main()
+print table

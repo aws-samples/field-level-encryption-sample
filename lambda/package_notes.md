@@ -1,7 +1,8 @@
 
 ### Building Lambda Decrypt Package
 
-#### Launch documented Amazon Linux AMI: http://docs.aws.amazon.com/lambda/latest/dg/current-supported-versions.html
+#### Launch documented Amazon Linux AMI:
+http://docs.aws.amazon.com/lambda/latest/dg/current-supported-versions.html
 
 #### ssh and install environment:
 
@@ -19,6 +20,8 @@ cd fle/lib64/python2.7/site-packages/; zip -r ~/fle_decrypt_data.zip * .*
 ~~~~
 
 #### Lastly add the function code to the zip from here:
+
 https://github.com/aws-samples/field-level-encryption-sample/blob/master/lambda/fle_decrypt_data.py
 
-#### More info: http://docs.aws.amazon.com/lambda/latest/dg/lambda-python-how-to-create-deployment-package.html
+#### More info:
+ http://docs.aws.amazon.com/lambda/latest/dg/lambda-python-how-to-create-deployment-package.html

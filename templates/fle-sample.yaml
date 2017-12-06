@@ -1,4 +1,52 @@
+Description: >
+  Field-level encryption sample
+  You will be billed for the AWS resources used if you create a stack from this template.
+  **NOTICE** Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  Licensed under the Apache License, Version 2.0 (the "License").
+  You may not use this file except in compliance with the License.
+  A copy of the License is located at http://www.apache.org/licenses/LICENSE-2.0 or in the "license" file accompanying this file.
+  This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+  either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+Parameters:
+
+  PrivateKeySSMPath:
+    Description: Parameter Store path where encrypted private key is stored
+    Type: String
+    Default: /cloudfront/field-encryption-sample/private-key
+    AllowedPattern: ^/[0-9a-zA-Z]+([0-9a-zA-Z/-]*[0-9a-zA-Z])*$
+  ArtifactsBucket:
+    Description: S3 bucket with artifact files (Lambda functions, html files, JS code, etc.)
+    Type: String
+    Default: atomic-artifacts
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: ArtifactsBucket S3 bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).
+  ArtifactsPrefix:
+    Description: Path in the S3 bucket containing artifact files
+    Type: String
+    Default: field-encryption-sample/
+    AllowedPattern: ^[0-9a-zA-Z-/]*$
+    ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).
+
+
 Resources:
+  FieldEncryptionKey: 
+    Type: "AWS::KMS::Key"
+    Properties: 
+      Description: "field-encryption-sample"
+      KeyPolicy: 
+        Version: "2012-10-17"
+        Id: "field-encryption-sample"
+        Statement: 
+        - 
+          Sid: 'Enable IAM User Permissions'
+          Effect: Allow
+          Principal: 
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 
+            - kms:*
+          Resource: '*'
+
   FLEApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -366,9 +414,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
+            - ssm:GetParameter
             - ssm:GetParameters
             - ssm:DescribeParameters
-            Resource: arn:aws:ssm:*:*:*
+            Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrivateKeySSMPath}'
       - PolicyName: Allow-Get-DynamoDB
         PolicyDocument:
           Version: '2012-10-17'
@@ -376,7 +425,34 @@ Resources:
           - Effect: Allow
             Action:
             - dynamodb:GetItem
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
             Resource: !Sub '${ContactsDynamoDBTable.Arn}'
+      - PolicyName: Allow-KMS-Decrypt
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - kms:Decrypt
+            Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${FieldEncryptionKey}'
+
+  DecryptFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: decrypt.lambda_handler
+      Role: !GetAtt DecryptFunctionExecutionRole.Arn
+      Runtime: python2.7
+      Environment:
+        Variables:
+          TABLENAME: !Ref ContactsDynamoDBTable
+          PRIVATEKEYSSMPATH: !Ref PrivateKeySSMPath 
+      Timeout: 10
+      MemorySize: 1024
+      Code:
+        S3Bucket: !Ref ArtifactsBucket
+        S3Key: !Sub ${ArtifactsPrefix}decrypt.zip
 
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'

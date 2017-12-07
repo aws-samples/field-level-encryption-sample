@@ -24,9 +24,9 @@ from aws_encryption_sdk.identifiers import WrappingAlgorithm, EncryptionKeyType
 from Crypto.PublicKey import RSA
 import base64
 
-PrivateKeyPath = '/cloudfront/field-encryption/private-key'
+PrivateKeyPath = os.environ['PRIVATEKEYSSMPATH']
 DBTableName = os.environ['TABLENAME']
-provider_id = 'FLEDemo'
+provider_id = os.environ['PROVIDERID']
 
 def decrypt_data(event, context):
     class SIFPrivateMasterKeyProvider(RawMasterKeyProvider):

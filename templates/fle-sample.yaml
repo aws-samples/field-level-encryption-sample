@@ -10,6 +10,10 @@ Description: >
 
 Parameters:
 
+  ProviderID:
+    Description: Provider ID used in Field-level encryption configuration in CloudFront
+    Type: String
+    Default: FLEDemo
   PrivateKeySSMPath:
     Description: Parameter Store path where encrypted private key is stored
     Type: String
@@ -415,8 +419,6 @@ Resources:
           - Effect: Allow
             Action:
             - ssm:GetParameter
-            - ssm:GetParameters
-            - ssm:DescribeParameters
             Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrivateKeySSMPath}'
       - PolicyName: Allow-Get-DynamoDB
         PolicyDocument:
@@ -424,9 +426,6 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - dynamodb:GetItem
-            - dynamodb:DescribeTable
-            - dynamodb:Query
             - dynamodb:Scan
             Resource: !Sub '${ContactsDynamoDBTable.Arn}'
       - PolicyName: Allow-KMS-Decrypt
@@ -441,18 +440,19 @@ Resources:
   DecryptFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Handler: decrypt.lambda_handler
+      Handler: fle_decrypt_data.decrypt_data
       Role: !GetAtt DecryptFunctionExecutionRole.Arn
       Runtime: python2.7
       Environment:
         Variables:
           TABLENAME: !Ref ContactsDynamoDBTable
-          PRIVATEKEYSSMPATH: !Ref PrivateKeySSMPath 
+          PRIVATEKEYSSMPATH: !Ref PrivateKeySSMPath
+          PROVIDERID: !Ref ProviderID
       Timeout: 10
       MemorySize: 1024
       Code:
         S3Bucket: !Ref ArtifactsBucket
-        S3Key: !Sub ${ArtifactsPrefix}decrypt.zip
+        S3Key: !Sub ${ArtifactsPrefix}fle_decrypt_data.zip
 
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'

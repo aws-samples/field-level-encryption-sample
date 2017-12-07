@@ -1,6 +1,8 @@
 
 ### Building Lambda Decrypt Package
 
+***Use these steps as a general guideline if you need to build your own decryption function package for Lambda.***
+
 #### Launch documented Amazon Linux AMI:
 http://docs.aws.amazon.com/lambda/latest/dg/current-supported-versions.html
 
@@ -12,7 +14,7 @@ sudo yum -y install gcc
 virtualenv fle
 source fle/bin/activate
 pip install --upgrade pip
-pip install cryptography aws_encryption_sdk pycrypto prettytable
+pip install cryptography aws_encryption_sdk pycrypto
 
 cd fle/lib/python2.7/site-packages/; zip -r ~/fle_decrypt_data.zip * .*
 

@@ -14,7 +14,6 @@
 import os
 import json
 import boto3
-from prettytable import PrettyTable
 
 import aws_encryption_sdk
 from aws_encryption_sdk.internal.crypto import WrappingKey
@@ -76,21 +75,20 @@ def decrypt_data(event, context):
     ddbclient = boto3.client('dynamodb')
     DBResponse = ddbclient.scan(TableName = DBTableName)
 
-    table = PrettyTable(['Name', 'Email', 'Phone'])
+    d = []
     for i in DBResponse['Items']:
         # Phone fields are encrypted, each field will require decryption
         PhoneDecrypted = DecryptField( private_key_text, i['Phone']['S'] )
-        # less sensitive data fields are not encrypted, no special handling needed
-        table.add_row( [i['Name']['S'], i['Email']['S'], PhoneDecrypted] )
+        d.append( [i['Name']['S'], i['Email']['S'], PhoneDecrypted] )
 
     # remove private key from local memory
     private_key_text = None
 
-    print table
+    # return result
+    return d
 
 def main():
 	fle_decrypt_data ("test", "test")
 
 if __name__ == "__main__":
   main()
-

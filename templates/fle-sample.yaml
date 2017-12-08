@@ -13,13 +13,13 @@ Parameters:
   ProviderID:
     Description: Provider ID used in Field-level encryption configuration in CloudFront (letters and numbers only, no special characters)
     Type: String
-    Default: fledemo
+    Default: FLEdemo
     AllowedPattern: ^[0-9a-zA-Z]*$
-    ConstraintDescription: 'letters and numbers only, no special characters'
+    ConstraintDescription: Letters and numbers only, no special characters
   PublicKeyName:
     Description: Name assigned to public key in Field-level encryption configuration in CloudFront (letters and numbers only, no special characters)
     Type: String
-    Default: fledemo
+    Default: DemoPublicKey
     AllowedPattern: ^[0-9a-zA-Z]*$
     ConstraintDescription: Letters and numbers only, no special characters
   PrivateKeySSMPath:

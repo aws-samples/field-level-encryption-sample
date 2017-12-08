@@ -26,6 +26,7 @@ import base64
 PrivateKeyPath = os.environ['PRIVATEKEYSSMPATH']
 DBTableName = os.environ['TABLENAME']
 provider_id = os.environ['PROVIDERID']
+PublicKeyName = os.environ['PUBLICKEYNAME']
 
 def decrypt_data(event, context):
     class SIFPrivateMasterKeyProvider(RawMasterKeyProvider):
@@ -69,7 +70,7 @@ def decrypt_data(event, context):
         WithDecryption=True
     )
     private_key_text = ssmresponse['Parameter']['Value']
-    sif_private_master_key_provider = SIFPrivateMasterKeyProvider("DemoPublicKey", private_key_text)
+    sif_private_master_key_provider = SIFPrivateMasterKeyProvider(PublicKeyName, private_key_text)
 
     # connect to DynamoDB table
     ddbclient = boto3.client('dynamodb')

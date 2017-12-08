@@ -54,17 +54,7 @@ Metadata:
         Parameters:
           - ArtifactsBucket
           - ArtifactsPrefix
-    ParameterLabels:
-      ProviderID:
-        default: Provider ID in ClodFront FLE configuration (required)
-      PublicKeyName:
-        default: Public Key Name in ClodFront FLE configuration (required)
-      PrivateKeySSMPath:
-        default: Parameter Store Path to Private Key (required)
-      ArtifactsBucket:
-        default: S3 Bucket with artifacts
-      ArtifactsPrefix:
-        default: Prefix for artifacts in S3
+
 
 Resources:
   FieldEncryptionKey: 
@@ -519,3 +509,7 @@ Outputs:
   KMSKeyID:
     Value: !Ref FieldEncryptionKey
     Description: KMS Key for encryption in parameter store
+  CloudFrontDistribution:
+    Value: !Sub https://console.aws.amazon.com/cloudfront/home?region=${AWS::Region}#distribution-settings:${CloudFrontDistribution}
+    Description: Edit CloudFront distribution settings
+

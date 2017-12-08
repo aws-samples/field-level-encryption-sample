@@ -1,57 +1,47 @@
-# Protect Sensitive Data in Web Forms with Field-Level Encryption and CloudFront
+# Enhance the Security of Sensitive Customer Data by Using Amazon CloudFront Field-Level Encryption
 
-Many web applications have a need to collect sensitive data from users.  For example, a travel booking web site may ask for your passport number, as well as some less sensitive data such as name, phone number and email address.  This data is transmitted to web servers and may also bounce among a number of microservices to perform useful work.  Finally, it is likely to be stored in a database for later retrieval.
 
-Typical approach to sensitive data protection is that each microservice and database access must be carefully configured and coded to ensure sensitive data is protected.  For example, you would develop safeguards in logging functionality to ensure sensitive data is masked or stripped out.  This can add complexity to your codebase, drag down performance, and even then the safeguards rarely provide perfect protection.
+##How field-level encryption works
 
-Field-Level Encryption solves this problem in a unique way.  Sensitive data fields in https form POSTs are automatically encrypted with customer-provided public RSA key.  From that point, all other systems in your architecture would only see cyphertext.  Even if one of these systems leaks out this cyphertext, the data is cryptographically protected.  Only designated systems with access to the private RSA key can decrypt sensitive data.
+Many web applications must collect data from users. For example, a travel booking website may ask for your passport number, as well as additional data such as your name, phone number, and email address. This data is transmitted to web servers and also might travel among a number of services to perform useful work. However, this also means that user's information may need to be accessed by only a small subset of these services, and most others do not need to access this data.
+This data is often stored in a database for retrieval at a later time. One approach to protecting stored sensitive data is to configure and code each service and database access to ensure that sensitive data is protected. For example, you can develop safeguards in logging functionality to ensure sensitive data is masked or removed. This can add complexity to your code base and limit performance.
 
-For example, a typical form post would contain data like this:
+Field-level encryption addresses this problem by ensuring sensitive data is encrypted at edge locations. Sensitive data fields in HTTPS form PUT/ POSTs are automatically encrypted with a user-provided public RSA key. After the data is encrypted, all other systems in your architecture see only ciphertext. Even if this ciphertext unintentionally becomes externally available, the data is cryptographically protected and only designated systems with access to the private RSA key can decrypt the sensitive data.
+It is critical to secure private RSA key material to prevent unauthorized access to the protected data. Management of cryptographic key material is a larger topic that is out of scope for this blog post, but should be carefully considered when implementing encryption within your applications. For example, in this blog post we store the private key material as a secure string in the EC2 Systems Manager Parameter Store. The parameter store provides a centralized store to manage your configuration data such as plaintext data (e.g., database strings) or secrets (e.g., passwords) that are encrypted using AWS Key Management Service (AWS KMS). You may have an existing key management system in place that you can use, or you can use AWS CloudHSM. CloudHSM is a cloud-based hardware security module (HSM) that enables you to easily generate and use your own encryption keys in the AWS Cloud.
 
-````
-POST / HTTP/1.1
+
+To illustrate Field-level encryption, let's look at a simple form submission, where Name and Phone values are sent to a web server using an HTTP POST.  A typical form POST would contain data such as the following.
+
+~~~
+POST / HTTP/1.
 Host: foo.com
 Content-Type: application/x-www-form-urlencoded
+Content-Length: 13
 
 Name=Bob&Phone=1235551212
-````
 
-Field-Level Encryption converts this to:
-````
+Field-level encryption converts this data to the following.
 POST / HTTP/1.1
 Host: foo.com
 Content-Type: application/x-www-form-urlencoded
+Content-Length: 13
 
 Name=Bob&Phone=<encrypted>ejYx52fxx2jjnwetvxx</encrypted>
-````
+~~~
 
-Field-Level Encryption adds another security layer to CloudFront, in addition to security feautres such as TLS encryption support, DDoS resilience, access logging, and others.  CloudFront integrates with AWS Shield for DDoS protection and with AWS WAF for protection against application-layer attacks, such as SQL injection and cross-site scripting.  Please review [AWS Best Practices for DDoS Resiliency](https://d0.awsstatic.com/whitepapers/Security/DDoS_White_Paper.pdf) and   [Use AWS WAF to Mitigate OWASP&#39;s Top 10 Web Application Vulnerabilities](https://d0.awsstatic.com/whitepapers/Security/aws-waf-owasp.pdf) whitepapers for more details on edge security in AWS.
+To further demonstrate field-level encryption in action, this blog post includes a sample Serverless Application that you can deploy by using CloudFormation. This CloudFormation template creates an application environment using Amazon CloudFront, Amazon API Gateway and AWS Lambda.The following diagram depicts the sample application architecture and data flow.
 
-
-## Architecture Ovierview
+## Architecture Overview
 
 ![architecture diagram](images/secure-ingress-architecture.png)
 
-1. User fills out HTML form page with sensitive data and submits the form, generating https POST to **Amazon CloudFront**.
-2. **Field-Level Encryption** feature of Amazon CloudFront intercepts the form POST and encrypts sensitive data with the public RSA key and replaces fields in the form post with encrypted ciphertext.  Form post is then safely sent to origin servers.
-3. **Elastic Beanstalk** Application accepts the form post data containing ciphertext where sensitive data would normally reside. If any data leak was to occur in the application, for example writing out form contents to logs, the sensitive data remains safe protected with encryption.
-4. Elastic Beanstalk stores data in a **DynamoDB** table, leaving sensitive data to remain safely encrypted at rest.
-5. Administrator who needs to view sensitive data logs in remotely via SSH to a bastion host **EC2** instance.
-6. In the remote session, administrator retrieves ciphertext from the DynamoDB table.
-7. Administrator decrypts sensitive data using private RSA key stored on the secure EC2 instance.
-8. Finally, decrypted sensitive data is transmitted via SSH to the administrator for review.
+Here is how the process works:
 
-
-## Deployment Walkthrough
-
-1. Deploy CloudFormation template
-2. SSH to EC2 instance
-3. Generate RSA key pair
-4. Upload public key to CloudFront and associate with Field-Level Encryption configuration
-
-## Testing Steps
-
-1. Open URL in the browser
-2. Fill out HTML form with sensitive data, click Submit
-3. SSH to EC2 instance
-4. Run Python script to download ciphertext from DynamoDB and decrypt sensitive data fields
+1.	An application user submits an HTML form page with sensitive data, generating an HTTPS POST to CloudFront.
+2.	Field-level encryption intercepts the form POST and encrypts sensitive data with the public RSA key and replaces fields in the form post with encrypted ciphertext. The form POST ciphertext is then sent to origin servers.
+3.	The serverless application accepts the form post data containing cipher text where sensitive data would normally reside. If a malicious user were able to compromise your application and gain access to your data, such as the contents of a form, this data is encrypted.
+4.	AWS Lambda stores data in a DynamoDB table, leaving sensitive data to remain safely encrypted at rest.
+5.	An administrator the AWS Console and a Lambda function to view the sensitive data.
+6.	During the session, the administrator retrieves cipher text from the DynamoDB table.
+7.	An administrator decrypts sensitive data using private key material stored in EC2 Systems Manager Parameter Store.
+8.	Finally, decrypted sensitive data is transmitted over SSL/TLS via the AWS console to the administrator for review.

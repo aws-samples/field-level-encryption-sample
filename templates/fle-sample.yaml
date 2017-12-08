@@ -512,6 +512,6 @@ Outputs:
   CloudFrontDistribution:
     Value: !Sub https://console.aws.amazon.com/cloudfront/home?region=${AWS::Region}#distribution-settings:${CloudFrontDistribution}
     Description: Edit CloudFront distribution settings
-    DecryptFunction:
-      Value: !Sub https://console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${DecryptFunction}
-      Description: Test decryption with Lambda
+  DecryptFunction:
+    Value: !Sub https://console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${DecryptFunction}
+    Description: Test decryption with Lambda

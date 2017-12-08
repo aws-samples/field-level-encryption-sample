@@ -11,20 +11,23 @@ Description: >
 Parameters:
 
   ProviderID:
-    Description: Provider ID used in Field-level encryption configuration in CloudFront (letters only, no numbers or special characters)
+    Description: Provider ID used in Field-level encryption configuration in CloudFront (letters and numbers only, no special characters)
     Type: String
     Default: fledemo
     AllowedPattern: ^[0-9a-zA-Z]*$
+    ConstraintDescription: 'letters and numbers only, no special characters'
   PublicKeyName:
-    Description: Name assigned to public key in Field-level encryption configuration in CloudFront (letters only, no numbers or special characters)
+    Description: Name assigned to public key in Field-level encryption configuration in CloudFront (letters and numbers only, no special characters)
     Type: String
     Default: fledemo
     AllowedPattern: ^[0-9a-zA-Z]*$
+    ConstraintDescription: Letters and numbers only, no special characters
   PrivateKeySSMPath:
     Description: Parameter Store path where encrypted private key is stored
     Type: String
     Default: /cloudfront/field-encryption-sample/private-key
     AllowedPattern: ^/[0-9a-zA-Z]+([0-9a-zA-Z/-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Must start with / and contain only letters, numbers, hyphens (-) and slashes (/)
   ArtifactsBucket:
     Description: S3 bucket with artifact files (Lambda functions, html files, JS code, etc.)
     Type: String
@@ -36,8 +39,32 @@ Parameters:
     Type: String
     Default: field-encryption-sample/
     AllowedPattern: ^[0-9a-zA-Z-/]*$
-    ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).
-
+    ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).  
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Field-level encryption (FLE) configuration
+        Parameters:
+          - ProviderID
+          - PublicKeyName
+          - PrivateKeySSMPath
+      - Label:
+          default: Artifacts configuration
+        Parameters:
+          - ArtifactsBucket
+          - ArtifactsPrefix
+    ParameterLabels:
+      ProviderID:
+        default: Provider ID in ClodFront FLE configuration (required)
+      PublicKeyName:
+        default: Public Key Name in ClodFront FLE configuration (required)
+      PrivateKeySSMPath:
+        default: Parameter Store Path to Private Key (required)
+      ArtifactsBucket:
+        default: S3 Bucket with artifacts
+      ArtifactsPrefix:
+        default: Prefix for artifacts in S3
 
 Resources:
   FieldEncryptionKey: 
@@ -465,7 +492,7 @@ Resources:
     Type: 'AWS::CloudFront::Distribution'
     Properties:
       DistributionConfig:
-        Comment: Field-Level Encryption Sample
+        Comment: !Sub ${AWS::StackName} Field-Level Encryption Sample
         Origins:
         - DomainName: !Sub ${FLEApi}.execute-api.${AWS::Region}.amazonaws.com
           Id: CFCustomOrigin
@@ -489,6 +516,6 @@ Outputs:
   ApplicationURL:
     Value: !Sub https://${CloudFrontDistribution.DomainName}/prod/
     Description: URL for the application
-   KMSKeyID:
+  KMSKeyID:
     Value: !Ref FieldEncryptionKey
     Description: KMS Key for encryption in parameter store

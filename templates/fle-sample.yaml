@@ -11,9 +11,15 @@ Description: >
 Parameters:
 
   ProviderID:
-    Description: Provider ID used in Field-level encryption configuration in CloudFront
+    Description: Provider ID used in Field-level encryption configuration in CloudFront (letters only, no numbers or special characters)
     Type: String
-    Default: FLEDemo
+    Default: fledemo
+    AllowedPattern: ^[0-9a-zA-Z]*$
+  PublicKeyName:
+    Description: Name assigned to public key in Field-level encryption configuration in CloudFront (letters only, no numbers or special characters)
+    Type: String
+    Default: fledemo
+    AllowedPattern: ^[0-9a-zA-Z]*$
   PrivateKeySSMPath:
     Description: Parameter Store path where encrypted private key is stored
     Type: String
@@ -448,6 +454,7 @@ Resources:
           TABLENAME: !Ref ContactsDynamoDBTable
           PRIVATEKEYSSMPATH: !Ref PrivateKeySSMPath
           PROVIDERID: !Ref ProviderID
+          PUBLICKEYNAME: !Ref PublicKeyName
       Timeout: 10
       MemorySize: 1024
       Code:

@@ -80,11 +80,11 @@ def decrypt_data(event, context):
         # Phone fields are encrypted, each field will require decryption
         PhoneDecrypted = DecryptField( private_key_text, i['Phone']['S'] )
         d.append( ['Name: ' + i['Name']['S'], 'Email: ' + i['Email']['S'],
-        'Phone Encrypted: ' + i['Phone']['S'][:30] + '...', 'Phone: ' + PhoneDecrypted ] )
+        'Phone Encrypted: ' + i['Phone']['S'][:30] + '...', 'Phone Decrypted: ' + PhoneDecrypted ] )
 
     # remove private key from local memory
     private_key_text = None
-    
+
     # return result
     return d
 

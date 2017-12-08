@@ -13,7 +13,7 @@ Parameters:
   ProviderID:
     Description: Provider ID used in Field-level encryption configuration in CloudFront (letters and numbers only, no special characters)
     Type: String
-    Default: FLEdemo
+    Default: FLEDemo
     AllowedPattern: ^[0-9a-zA-Z]*$
     ConstraintDescription: Letters and numbers only, no special characters
   PublicKeyName:
@@ -39,7 +39,7 @@ Parameters:
     Type: String
     Default: field-encryption-sample/
     AllowedPattern: ^[0-9a-zA-Z-/]*$
-    ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).  
+    ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -57,20 +57,20 @@ Metadata:
 
 
 Resources:
-  FieldEncryptionKey: 
+  FieldEncryptionKey:
     Type: "AWS::KMS::Key"
-    Properties: 
+    Properties:
       Description: "field-encryption-sample"
-      KeyPolicy: 
+      KeyPolicy:
         Version: "2012-10-17"
         Id: "field-encryption-sample"
-        Statement: 
-        - 
+        Statement:
+        -
           Sid: 'Enable IAM User Permissions'
           Effect: Allow
-          Principal: 
+          Principal:
             AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-          Action: 
+          Action:
             - kms:*
           Resource: '*'
 
@@ -512,4 +512,6 @@ Outputs:
   CloudFrontDistribution:
     Value: !Sub https://console.aws.amazon.com/cloudfront/home?region=${AWS::Region}#distribution-settings:${CloudFrontDistribution}
     Description: Edit CloudFront distribution settings
-
+    DecryptFunction:
+      Value: !Sub https://console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${DecryptFunction}
+      Description: Test decryption with Lambda

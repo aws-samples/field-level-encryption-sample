@@ -1,7 +1,8 @@
 # Enhance the Security of Sensitive Customer Data by Using Amazon CloudFront Field-Level Encryption
 
+***The complete post for this solution is [available on the AWS Security Blog](https://aws.amazon.com/blogs/security/).***
 
-##How field-level encryption works
+### How CloudFront field-level encryption works
 
 Many web applications must collect data from users. For example, a travel booking website may ask for your passport number, as well as additional data such as your name, phone number, and email address. This data is transmitted to web servers and also might travel among a number of services to perform useful work. However, this also means that user's information may need to be accessed by only a small subset of these services, and most others do not need to access this data.
 This data is often stored in a database for retrieval at a later time. One approach to protecting stored sensitive data is to configure and code each service and database access to ensure that sensitive data is protected. For example, you can develop safeguards in logging functionality to ensure sensitive data is masked or removed. This can add complexity to your code base and limit performance.
@@ -13,7 +14,7 @@ It is critical to secure private RSA key material to prevent unauthorized access
 To illustrate Field-level encryption, let's look at a simple form submission, where Name and Phone values are sent to a web server using an HTTP POST.  A typical form POST would contain data such as the following.
 
 ~~~
-POST / HTTP/1.
+POST / HTTP/1.1
 Host: foo.com
 Content-Type: application/x-www-form-urlencoded
 Content-Length: 13
@@ -31,7 +32,7 @@ Name=Bob&Phone=<encrypted>ejYx52fxx2jjnwetvxx</encrypted>
 
 To further demonstrate field-level encryption in action, this blog post includes a sample Serverless Application that you can deploy by using CloudFormation. This CloudFormation template creates an application environment using Amazon CloudFront, Amazon API Gateway and AWS Lambda.The following diagram depicts the sample application architecture and data flow.
 
-## Architecture Overview
+### Architecture Overview
 
 ![architecture diagram](images/secure-ingress-architecture.png)
 

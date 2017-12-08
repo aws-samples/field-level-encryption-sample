@@ -482,3 +482,6 @@ Outputs:
   ApplicationURL:
     Value: !Sub https://${CloudFrontDistribution.DomainName}/prod/
     Description: URL for the application
+   KMSKeyID:
+    Value: !Ref FieldEncryptionKey
+    Description: KMS Key for encryption in parameter store

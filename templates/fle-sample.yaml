@@ -40,6 +40,7 @@ Parameters:
     Default: field-encryption-sample/
     AllowedPattern: ^[0-9a-zA-Z-/]*$
     ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -54,8 +55,6 @@ Metadata:
         Parameters:
           - ArtifactsBucket
           - ArtifactsPrefix
-
-
 Resources:
   FieldEncryptionKey:
     Type: "AWS::KMS::Key"
@@ -83,11 +82,18 @@ Resources:
         info:
           version: "2017-11-23T15:06:37Z"
           title: "forms"
+        securityDefinitions:
+          api_key:
+            type: apiKey
+            name: x-api-key
+            in: header
         paths:
           /:
             get:
               produces:
               - "application/json"
+              security:
+              - api_key: []
               responses:
                 "200":
                   description: "200 response"
@@ -105,6 +111,8 @@ Resources:
             post:
               produces:
               - "application/json"
+              security:
+              - api_key: []
               responses:
                 "200":
                   description: "200 response"
@@ -158,12 +166,119 @@ Resources:
             type: "object"
             title: "Empty Schema"
 
+  FLEApiKey:
+    Type: "AWS::ApiGateway::ApiKey"
+    DependsOn:
+      - "FLEApiDeployment"
+      - "FLEApi"
+    Properties:
+      Name: "FLEApiKey"
+      Description: "FLE CloudFormation API Key V1"
+      Enabled: "true"
+      StageKeys:
+        - RestApiId: !Ref "FLEApi"
+          StageName: "prod"
+  FLEusagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - "FLEApiDeployment"
+      - "FLEApi"
+    Properties:
+      ApiStages:
+      - ApiId: !Ref 'FLEApi'
+        Stage: "prod"
+      Description: FLE Demo Usage Plan
+  FLEusagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties :
+      KeyId: !Ref 'FLEApiKey'
+      KeyType: API_KEY
+      UsagePlanId: !Ref 'FLEusagePlan'
+
+  GetAPIKey:
+    Type: "Custom::GetApiKey"
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt GetAPIKeyFunction.Arn
+      Region: !Ref "AWS::Region"
+  GetAPIKeyFunction:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - "FLEApiKey"
+    Properties:
+      Description: Return API Gateway Key
+      Handler: index.handler
+      Runtime: python3.6
+      Environment:
+        Variables:
+          FLEAPIKEY: !Ref FLEApiKey
+      Role: !GetAtt GetAPIKeyExecutionRole.Arn
+      Timeout: 60
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import os
+          import boto3
+          from botocore.exceptions import ClientError
+          import json
+          import logging
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          client = boto3.client('apigateway')
+          FLEApiKey = os.environ['FLEAPIKEY']
+          def handler(event, context):
+              responseData = {}
+              try:
+                logger.info('Received event: {}'.format(json.dumps(event)))
+                # Assume failure unless we obtain an api key
+                responseStatus = cfnresponse.FAILED
+                if event['RequestType'] == 'Delete':
+                  responseStatus = cfnresponse.SUCCESS
+                elif event['RequestType'] == 'Create' or event['RequestType'] == 'Update':
+                  # Try to obtain FLE api key
+                  response = client.get_api_key(apiKey=FLEApiKey, includeValue=True)
+                  responseData = {'APIKeyValue': response['value']}
+                  responseStatus = cfnresponse.SUCCESS
+              except ClientError as e:
+                logger.error('Error: {}'.format(e))
+                responseStatus = cfnresponse.FAILED
+              # Log the response status
+              logger.info('Returning response status of: {}'.format(responseStatus))
+              # Send result to stack
+              cfnresponse.send(event, context, responseStatus, responseData)
+  GetAPIKeyExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+        Policies:
+        - PolicyName: AllowGetFLEApiKey
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - logs:DescribeLogStreams
+              Resource: arn:aws:logs:*:*:*
+            - Effect: Allow
+              Action:
+              - apigateway:GET
+              Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/apikeys/${FLEApiKey}'
+
   FLEApiDeployment:
     Type: AWS::ApiGateway::Deployment
     Properties:
       Description: Prod deployment for FLE API
       RestApiId: !Ref FLEApi
-      StageName: prod
+      StageName: "prod"
 
   FLEApiPOSTFunctionPermissions:
     Type: AWS::Lambda::Permission
@@ -219,8 +334,8 @@ Resources:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
+            - logs:DescribeLogStreams
             Resource: arn:aws:logs:*:*:*
-
   GETFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -310,6 +425,7 @@ Resources:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
+            - logs:DescribeLogStreams
             Resource: arn:aws:logs:*:*:*
       - PolicyName: Allow-Put-Into-DynamoDB
         PolicyDocument:
@@ -319,7 +435,6 @@ Resources:
             Action:
             - dynamodb:PutItem
             Resource: !Sub '${ContactsDynamoDBTable.Arn}'
-
   POSTFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -434,6 +549,7 @@ Resources:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
+            - logs:DescribeLogStreams
             Resource: arn:aws:logs:*:*:*
       - PolicyName: Allow-Get-ParamStore
         PolicyDocument:
@@ -459,7 +575,6 @@ Resources:
             Action:
             - kms:Decrypt
             Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${FieldEncryptionKey}'
-
   DecryptFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -489,7 +604,10 @@ Resources:
           CustomOriginConfig:
             HTTPSPort: '443'
             OriginProtocolPolicy: https-only
-        Enabled: 'true'
+          OriginCustomHeaders:
+            - HeaderName: "x-api-key"
+              HeaderValue: !GetAtt GetAPIKey.APIKeyValue
+        Enabled: "true"
         DefaultCacheBehavior:
           TargetOriginId: CFCustomOrigin
           ViewerProtocolPolicy: redirect-to-https
@@ -500,7 +618,7 @@ Resources:
               Forward: none
         PriceClass: PriceClass_200
         ViewerCertificate:
-          CloudFrontDefaultCertificate: 'true'
+          CloudFrontDefaultCertificate: "true"
 
 Outputs:
   ApplicationURL:

@@ -36,7 +36,7 @@ To further demonstrate field-level encryption in action, this blog post includes
 
 ![architecture diagram](images/secure-ingress-architecture.png)
 
-Here is how the process works:
+Here is how the sample solution works:
 
 1.	An application user submits an HTML form page with sensitive data, generating an HTTPS POST to CloudFront.
 2.	Field-level encryption intercepts the form POST and encrypts sensitive data with the public RSA key and replaces fields in the form post with encrypted ciphertext. The form POST ciphertext is then sent to origin servers.

@@ -512,7 +512,7 @@ Resources:
                       Phone = FieldValue
               if (len(Phone)<200):
                   RESPONSE="<html><body>ERROR: please check Field-level encryption configuration in CloudFront</body></html>"
-              else: 
+              else:
                   DBTableName = os.environ['TABLENAME']
                   ddbclient = boto3.client('dynamodb')
                   DBResponse = ddbclient.put_item(
@@ -610,7 +610,7 @@ Resources:
           OriginCustomHeaders:
             - HeaderName: "x-api-key"
               HeaderValue: !GetAtt GetAPIKey.APIKeyValue
-        Enabled: "true"
+        Enabled: "false"
         DefaultCacheBehavior:
           TargetOriginId: CFCustomOrigin
           ViewerProtocolPolicy: redirect-to-https

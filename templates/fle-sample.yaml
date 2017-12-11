@@ -510,20 +510,23 @@ Resources:
                       Email = FieldValue
                   elif FieldName == 'phone':
                       Phone = FieldValue
-              DBTableName = os.environ['TABLENAME']
-              ddbclient = boto3.client('dynamodb')
-              DBResponse = ddbclient.put_item(
-                TableName = DBTableName,
-                Item = {
-                  'Email': {'S': Email},
-                  'Phone': {'S': Phone},
-                  'Name':  {'S': Name }
-                }
-              )
-              RESPONSE = html_template()
-              RESPONSE = RESPONSE.replace('##NAME##', Name)
-              RESPONSE = RESPONSE.replace('##EMAIL##', Email)
-              RESPONSE = RESPONSE.replace('##PHONE##', mergewithbreaks(Phone,60))
+              if (len(Phone)<200):
+                  RESPONSE="<html><body>ERROR: please check Field-level encryption configuration in CloudFront</body></html>"
+              else: 
+                  DBTableName = os.environ['TABLENAME']
+                  ddbclient = boto3.client('dynamodb')
+                  DBResponse = ddbclient.put_item(
+                    TableName = DBTableName,
+                    Item = {
+                      'Email': {'S': Email},
+                      'Phone': {'S': Phone},
+                      'Name':  {'S': Name }
+                    }
+                  )
+                  RESPONSE = html_template()
+                  RESPONSE = RESPONSE.replace('##NAME##', Name)
+                  RESPONSE = RESPONSE.replace('##EMAIL##', Email)
+                  RESPONSE = RESPONSE.replace('##PHONE##', mergewithbreaks(Phone,60))
               return respond(None, RESPONSE)
 
   DecryptFunctionExecutionRole:

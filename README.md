@@ -4,33 +4,33 @@
 
 ### How CloudFront field-level encryption works
 
-Many web applications must collect data from users. For example, a travel booking website may ask for your passport number, as well as additional data such as your name, phone number, and email address. This data is transmitted to web servers and also might travel among a number of services to perform useful work. However, this also means that user's information may need to be accessed by only a small subset of these services, and most others do not need to access this data.
-This data is often stored in a database for retrieval at a later time. One approach to protecting stored sensitive data is to configure and code each service and database access to ensure that sensitive data is protected. For example, you can develop safeguards in logging functionality to ensure sensitive data is masked or removed. This can add complexity to your code base and limit performance.
+Many web applications collect and store data from users as those users interact with the applications. For example, a travel booking website may ask for your passport number and less sensitive data such as your food preferences. This data is transmitted to web servers and also might travel among a number of services to perform tasks. However, this also means that your sensitive information may need to be accessed by only a small subset of these services (most other services do not need to access your data).
+User data is often stored in a database for retrieval at a later time. One approach to protecting stored sensitive data is to cautiously configure and code each service to ensure that sensitive data is protected. For example, you can develop safeguards in logging functionality to ensure sensitive data is masked or removed. This can add complexity to your code base and limit performance.
 
-Field-level encryption addresses this problem by ensuring sensitive data is encrypted at edge locations. Sensitive data fields in HTTPS form PUT/ POSTs are automatically encrypted with a user-provided public RSA key. After the data is encrypted, all other systems in your architecture see only ciphertext. Even if this ciphertext unintentionally becomes externally available, the data is cryptographically protected and only designated systems with access to the private RSA key can decrypt the sensitive data.
-It is critical to secure private RSA key material to prevent unauthorized access to the protected data. Management of cryptographic key material is a larger topic that is out of scope for this blog post, but should be carefully considered when implementing encryption within your applications. For example, in this blog post we store the private key material as a secure string in the EC2 Systems Manager Parameter Store. The parameter store provides a centralized store to manage your configuration data such as plaintext data (e.g., database strings) or secrets (e.g., passwords) that are encrypted using AWS Key Management Service (AWS KMS). You may have an existing key management system in place that you can use, or you can use AWS CloudHSM. CloudHSM is a cloud-based hardware security module (HSM) that enables you to easily generate and use your own encryption keys in the AWS Cloud.
+Field-level encryption addresses this problem by ensuring sensitive data is encrypted at CloudFront edge locations. Sensitive data fields in HTTPS form POSTs are automatically encrypted with a user-provided public RSA key. After the data is encrypted, other systems in your architecture see only ciphertext. Even if this ciphertext unintentionally becomes externally available, the data is cryptographically protected and only designated systems with access to the private RSA key can decrypt the sensitive data.
+It is critical to secure private RSA key material to prevent unauthorized access to the protected data. Management of cryptographic key material is a larger topic that is out of scope for this blog post, but should be carefully considered when implementing encryption in your applications. For example, in this blog post we store private key material as a secure string in the Amazon EC2 Systems Manager Parameter Store. The Parameter Store provides a centralized location for managing your configuration data such as plaintext data (such as database strings) or secrets (such as passwords) that are encrypted using AWS Key Management Service (AWS KMS). You may have an existing key management system in place that you can use, or you can use AWS CloudHSM. CloudHSM is a cloud-based hardware security module (HSM) that enables you to easily generate and use your own encryption keys in the AWS Cloud.
 
-
-To illustrate Field-level encryption, let's look at a simple form submission, where Name and Phone values are sent to a web server using an HTTP POST.  A typical form POST would contain data such as the following.
+To illustrate field-level encryption, let's look at a simple form submission where Name and Phone values are sent to a web server using an HTTP POST. A typical form POST would contain data such as the following.
 
 ~~~
 POST / HTTP/1.1
-Host: foo.com
+Host: example.com
 Content-Type: application/x-www-form-urlencoded
-Content-Length: 13
+Content-Length:60
 
-Name=Bob&Phone=1235551212
+Name=Jane+Doe&Phone=404-555-0150
 
-Field-level encryption converts this data to the following.
+
+Instead of taking this typical approach, field-level encryption converts this data similar to the following.
 POST / HTTP/1.1
-Host: foo.com
+Host: example.com
 Content-Type: application/x-www-form-urlencoded
-Content-Length: 13
+Content-Length: 1713
 
-Name=Bob&Phone=<encrypted>ejYx52fxx2jjnwetvxx</encrypted>
+Name=Jane+Doe&Phone=AYABeHxZ0ZqWyysqxrB5pEBSYw4AAA...
 ~~~
 
-To further demonstrate field-level encryption in action, this blog post includes a sample Serverless Application that you can deploy by using CloudFormation. This CloudFormation template creates an application environment using Amazon CloudFront, Amazon API Gateway and AWS Lambda.The following diagram depicts the sample application architecture and data flow.
+To further demonstrate field-level encryption in action, this blog post includes a sample serverless application that you can deploy by using a CloudFormation template, which creates an application environment using CloudFront, Amazon API Gateway and Lambda. The sample application is only intended to demonstrate field-level encryption functionality and is not intended for production use. The following diagram depicts the architecture and data flow of this sample application.
 
 ### Architecture Overview
 

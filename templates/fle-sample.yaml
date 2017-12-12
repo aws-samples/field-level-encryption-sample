@@ -376,9 +376,9 @@ Resources:
                       <tbody>
                         <thead>
                         <tr><th colspan="2">Fill out the form below</th></tr>
-                        <tr><td>Full Name:</td><td><input type="text" name="name" value="Jenny Smith"></td></tr>
-                        <tr><td>Email Address:</td><td><input type="text" name="email" value="jenny@domain.com"></td></tr>
-                        <tr><td>Phone Number:</td><td><input type="text" name="phone" value="404-867-5309"></td></tr>
+                        <tr><td>Full Name:</td><td><input type="text" name="name" value="Jane Doe"></td></tr>
+                        <tr><td>Email Address:</td><td><input type="text" name="email" value="janedoe@example.com"></td></tr>
+                        <tr><td>Phone Number:</td><td><input type="text" name="phone" value="404-555-0150"></td></tr>
                         <tr><td>&nbsp;</td><td><input type="submit" value="Submit"></td></tr>
                       </tbody>
                     </table>
@@ -476,18 +476,6 @@ Resources:
                     </table></body></html>
               """
               return template
-          def split2len(s, n):
-              def _f(s, n):
-                  while s:
-                      yield s[:n]
-                      s = s[n:]
-              return list(_f(s, n))
-          def mergewithbreaks(s,n):
-              slist = split2len(s,n)
-              output = ""
-              for line in slist:
-                  output = output + line + "<br>"
-              return output
           def respond(err, res=None):
               return {
                   'statusCode': '400' if err else '200',
@@ -526,7 +514,7 @@ Resources:
                   RESPONSE = html_template()
                   RESPONSE = RESPONSE.replace('##NAME##', Name)
                   RESPONSE = RESPONSE.replace('##EMAIL##', Email)
-                  RESPONSE = RESPONSE.replace('##PHONE##', mergewithbreaks(Phone,60))
+                  RESPONSE = RESPONSE.replace('##PHONE##', Phone[:30] + '...' )
               return respond(None, RESPONSE)
 
   DecryptFunctionExecutionRole:

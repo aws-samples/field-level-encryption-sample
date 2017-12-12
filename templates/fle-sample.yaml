@@ -29,17 +29,17 @@ Parameters:
     AllowedPattern: ^/[0-9a-zA-Z]+([0-9a-zA-Z/-]*[0-9a-zA-Z])*$
     ConstraintDescription: Must start with / and contain only letters, numbers, hyphens (-) and slashes (/)
   ArtifactsBucket:
-    Description: S3 bucket with artifact files (Lambda functions, html files, JS code, etc.)
+    Description: S3 bucket with artifact files (Lambda functions, templates, html files, etc.)
     Type: String
-    Default: atomic-artifacts
+    Default: awsiammedia
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
     ConstraintDescription: ArtifactsBucket S3 bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).
   ArtifactsPrefix:
     Description: Path in the S3 bucket containing artifact files
     Type: String
-    Default: field-encryption-sample/
+    Default: public/sample/CloudFrontFieldLevelEncryption/
     AllowedPattern: ^[0-9a-zA-Z-/]*$
-    ConstraintDescription: TemplatesPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).
+    ConstraintDescription: ArtifactsPrefix key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slash (/).
 
 Metadata:
   AWS::CloudFormation::Interface:

@@ -1,7 +1,7 @@
 
 ### Building Lambda Decrypt Package
 
-***Use these steps as a general guideline if you need to build your own decryption function package for Lambda.***
+***Use these steps as a general guideline if you need to build your own Python decryption function package for Lambda.***
 
 #### Launch documented Amazon Linux AMI:
 http://docs.aws.amazon.com/lambda/latest/dg/current-supported-versions.html

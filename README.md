@@ -1,6 +1,6 @@
 # Enhance the Security of Sensitive Customer Data by Using Amazon CloudFront Field-Level Encryption
 
-***The complete post for this solution is [available on the AWS Security Blog](https://aws.amazon.com/blogs/security/).***
+***The complete post for this solution is [available on the AWS Security Blog](https://aws.amazon.com/blogs/security/how-to-enhance-the-security-of-sensitive-customer-data-by-using-amazon-cloudfront-field-level-encryption/).***
 
 ### How CloudFront field-level encryption works
 

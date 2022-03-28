@@ -12,13 +12,13 @@
 # language governing permissions and limitations under the License.
 
 import os
-import json
 import boto3
 
 import aws_encryption_sdk
 from aws_encryption_sdk.internal.crypto import WrappingKey
 from aws_encryption_sdk.key_providers.raw import RawMasterKeyProvider
 from aws_encryption_sdk.identifiers import WrappingAlgorithm, EncryptionKeyType
+from aws_encryption_sdk import CommitmentPolicy
 
 from Crypto.PublicKey import RSA
 import base64
@@ -51,13 +51,15 @@ def decrypt_data(event, context):
                 wrapping_key_type=EncryptionKeyType.PRIVATE
             )
 
-    def DecryptField(private_key, field_data):
+    def DecryptField(field_data):
         # add padding if needed base64 decoding
         field_data = field_data + '=' * (-len(field_data) % 4)
         # base64-decode to get binary ciphertext
         ciphertext = base64.b64decode(field_data)
         # decrypt ciphertext into plaintext
-        plaintext, header = aws_encryption_sdk.decrypt(
+        client = aws_encryption_sdk.EncryptionSDKClient(commitment_policy=CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
+
+        plaintext, header = client.decrypt(
             source=ciphertext,
             key_provider=sif_private_master_key_provider
         )
@@ -81,7 +83,7 @@ def decrypt_data(event, context):
         # Phone fields are encrypted, each field will require decryption
         PhoneDecrypted = DecryptField( private_key_text, i['Phone']['S'] )
         d.append( ['Name: ' + i['Name']['S'], 'Email: ' + i['Email']['S'],
-        'Phone Encrypted: ' + i['Phone']['S'][:30] + '...', 'Phone Decrypted: ' + PhoneDecrypted ] )
+        'Phone Encrypted: ' + i['Phone']['S'][:30] + '...', 'Phone Decrypted: ' + PhoneDecrypted.decode() ] )
 
     # remove private key from local memory
     private_key_text = None
